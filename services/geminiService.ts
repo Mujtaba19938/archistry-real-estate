@@ -1,14 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
 
 const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+let ai: GoogleGenAI | null = null;
+
+if (apiKey) {
+  try {
+    ai = new GoogleGenAI({ apiKey });
+  } catch (e) {
+    console.error("Failed to initialize Gemini AI:", e);
+  }
+}
 
 export const sendMessageToGemini = async (history: { role: string; parts: { text: string }[] }[], newMessage: string) => {
+  if (!ai || !apiKey) {
+    console.warn("Gemini API Key is missing. Returning mock response.");
+    return "I'm currently in demo mode as the API key hasn't been configured. Once fully deployed with a valid key, I can help you find your dream home!";
+  }
+
   try {
-    const model = 'gemini-3-flash-preview';
-    
+    const model = 'gemini-1.5-flash';
+
     // Construct the chat history for the API
-    // We only send the last few messages to keep context relevant but concise
     const chatHistory = history.map(msg => ({
       role: msg.role === 'model' ? 'model' : 'user',
       parts: msg.parts,
